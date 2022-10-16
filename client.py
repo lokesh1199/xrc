@@ -8,7 +8,6 @@ TERMINATE = 'TERMINATE'
 HEADER = 64
 
 
-
 def send(conn, msg):
     encodedMsg = msg.encode(FORMAT)
     msgLength = str(len(encodedMsg)).encode(FORMAT)
@@ -20,6 +19,7 @@ def send(conn, msg):
 
     # actual message
     conn.send(encodedMsg)
+
 
 def start():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,10 +50,6 @@ def recieve(conn):
 
         print(msg.decode(FORMAT))
 
+
 if __name__ == '__main__':
     start()
-
-            
-
-    
-

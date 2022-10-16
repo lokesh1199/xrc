@@ -8,7 +8,6 @@ TERMINATE = b'TERMINATE'
 HEADER = 64
 
 
-
 def handleClient(conn, addr, clients):
     while True:
         # header
@@ -26,12 +25,14 @@ def handleClient(conn, addr, clients):
         for client in clients:
             if client != conn:
                 # don't send message to itself
-                send(client, msg)
-    
+                send(client, addr, msg)
+
     print(f'[DEBUG] {addr} exited...')
     conn.close()
 
-def send(conn, encodedMsg):
+
+def send(conn, sender, encodedMsg):
+    encodedMsg = str(sender).encode(FORMAT) + b' -> ' + encodedMsg
     msgLength = str(len(encodedMsg)).encode(FORMAT)
     if len(msgLength) < HEADER:
         msgLength += b' ' * (HEADER - len(msgLength))
@@ -54,17 +55,16 @@ def start():
             conn, addr = server.accept()
             print(f'[DEBUG] {addr} joined...')
             clients.add(conn)
-            threading.Thread(target=handleClient, args=(conn, addr, clients)).start()
+            threading.Thread(
+                target=handleClient,
+                args=(conn, addr, clients)).start()
     except KeyboardInterrupt:
         print('Shuting down server...')
     except Exception as e:
         print(e)
     finally:
         server.close()
-    
-    
-    
+
 
 if __name__ == '__main__':
     start()
-   
