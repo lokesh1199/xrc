@@ -1,55 +1,70 @@
 import socket
 import threading
 
-PORT = 9002
-HOST = '192.168.1.253'
-FORMAT = 'utf-8'
-TERMINATE = 'TERMINATE'
-HEADER = 64
 
+class Client:
+    FORMAT = 'utf-8'
+    TERMINATE = 'TERMINATE'
+    HEADER = 64
 
-def send(conn, msg):
-    encodedMsg = msg.encode(FORMAT)
-    msgLength = str(len(encodedMsg)).encode(FORMAT)
-    if len(msgLength) < HEADER:
-        msgLength += b' ' * (HEADER - len(msgLength))
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.die = threading.Event()    # event to check is client up
 
-    # header
-    conn.send(msgLength)
+    def send(self, conn, msg):
+        encodedMsg = msg.encode(self.FORMAT)
+        msgLength = str(len(encodedMsg)).encode(self.FORMAT)
+        if len(msgLength) < self.HEADER:
+            msgLength += b' ' * (self.HEADER - len(msgLength))
 
-    # actual message
-    conn.send(encodedMsg)
+        # header
+        conn.send(msgLength)
 
+        # actual message
+        conn.send(encodedMsg)
 
-def start():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        server.connect((HOST, PORT))
-    except ConnectionRefusedError:
-        print('Server is down')
-        server.close()
-        return
+    def start(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+            try:
+                client.connect((self.host, self.port))
+            except ConnectionRefusedError:
+                print('Server down...')
+                return
 
-    threading.Thread(target=recieve, args=(server, )).start()
-    while True:
-        msg = input()
-        if msg == TERMINATE:
-            server.close()
-            return
+            client.settimeout(5)
 
-        send(server, msg)
+            threading.Thread(target=self.recieve, args=(client, )).start()
+            while True:
+                msg = input()
+                if not msg.strip():
+                    continue
 
+                self.send(client, msg)
+                if msg == self.TERMINATE:
+                    self.die.set()
+                    client.close()
+                    return
 
-def recieve(conn):
-    while True:
-        header = conn.recv(HEADER)
-        if not header:
-            continue
-        msgLength = int(header)
-        msg = conn.recv(msgLength)
+    def recieve(self, conn):
+        while not self.die.is_set():
+            try:
+                header = conn.recv(self.HEADER)
+            except OSError:
+                # timeout error
+                continue
+            if not header:
+                # if the message is blank, continue
+                continue
+            msgLength = int(header)
+            msg = conn.recv(msgLength)
 
-        print(msg.decode(FORMAT))
+            print(msg.decode(self.FORMAT))
 
 
 if __name__ == '__main__':
-    start()
+    host = '192.168.1.253'
+    port = 9002
+
+    client = Client(host, port)
+    client.start()
