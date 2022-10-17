@@ -71,7 +71,8 @@ class Server:
 
 
 if __name__ == '__main__':
-    host = '192.168.1.253'
-    port = 9002
+    host = input('Host: ')  # '192.168.1.253'
+    port = int(input('Port: '))  # 9002
+
     server = Server(host, port)
     server.start()

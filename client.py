@@ -63,8 +63,8 @@ class Client:
 
 
 if __name__ == '__main__':
-    host = '192.168.1.253'
-    port = 9002
+    host = input('Host: ')  # '192.168.1.253'
+    port = int(input('Port: '))  # 9002
 
     client = Client(host, port)
     client.start()
